@@ -1,0 +1,43 @@
+ShadowMap
+
+struct ShadowMap {
+	sampler2D tex;
+	mat4 toShadowSpace;
+	float shadowDistance;
+};
+
+float shadowVisibility(ShadowMap s, float distance) {
+	const float trd = 2.0;
+	//float d = distance - (s.shadowDistance - trd);
+	//d = d / trd;
+	return clamp((distance - (s.shadowDistance - trd) ) / trd, 0.0, 1.0);
+}
+
+vec4 calculateShadowCoords(ShadowMap s, vec3 worldPosition, vec3 relativeToCam) {
+	vec4 ret = s.toShadowSpace * vec4(worldPosition, 1.0);
+	ret.w = shadowVisibility(s, length(relativeToCam));
+	return ret;
+}
+
+float getShadow(ShadowMap s, vec4 shadowCoords){
+	/*
+	float objectNearestLight = texture(s.tex, shadowCoords.xy).r;
+	return shadowCoords.z > objectNearestLight + 0.0003 ? 1.0 : 0.0;
+	*/
+	// alread better than standard pcf in some parts. Still, definitely an improvement possible
+	const int pcfCount = 1;
+	const float totalTexels = 27.0;//(for 1) // 125.0;// (for 2) //(pcfCount * 2.0 + 1.0) * (pcfCount * 2.0 + 1.0);
+
+	float texelSize = 1.0 / textureSize(s.tex, 0).x;
+	float total = 0.0;
+	
+	for(int x = -pcfCount; x <= pcfCount; x++){
+		for(int y = -pcfCount; y <= pcfCount; y++){
+			float objectNearestLight = texture(s.tex, shadowCoords.xy + vec2(x, y) * texelSize).r;
+			if(shadowCoords.z > objectNearestLight + 0.0003){
+				total += abs(pcfCount - x) + abs(pcfCount - y) + 1;// weigh depending on how near the value is.
+			}
+		}
+	}
+	return total /  totalTexels / shadowCoords.w;
+}

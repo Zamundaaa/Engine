@@ -1,0 +1,11 @@
+MaterialLayer
+
+struct MaterialLayer{
+	int hasTexture;
+	sampler2D Tex;
+	vec4 color;
+};
+
+vec4 getColor(vec2 texCoords, MaterialLayer m){
+	return m.hasTexture == 1 ? texture(m.Tex, texCoords) : m.color;
+}
