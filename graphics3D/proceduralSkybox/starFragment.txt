@@ -1,0 +1,103 @@
+
+in vec3 texCoords;
+
+out vec4 out_Color;
+
+uniform float seed;
+
+float hash( vec3 p ){
+    return fract( sin(seed+(p.x*73.924+p.y*94.1389+p.z*26.264)) * 45678.9123 );
+}
+
+highp float hash(float x, float y){
+    highp float a = 12.9898;
+    highp float b = 78.233;
+    highp float c = 43758.5453;
+    highp float dt= dot(vec2(x, y) ,vec2(a,b));
+    highp float sn= mod(dt,3.14);
+    return fract(sin(sn) * c);
+}
+
+float hash(float x){
+	return fract(sin(seed+x*153.43781)*45678.9123);
+}
+
+float smoothRandom(float x, float z){
+	float corners = (hash(x - 1, z - 1) + hash(x + 1, z - 1) + hash(x - 1, z + 1)
+				+ hash(x + 1, z + 1)) / 16.0;
+	float sides = (hash(x - 1, z) + hash(x + 1, z) + hash(x, z - 1) + hash(x, z + 1)) / 8.0;
+	float center = hash(x, z) / 4.0;
+	return corners + sides + center;
+}
+
+float interpolatedRandom(float x, float z){
+	x = x*100;
+	z = z*100;
+	float intX = floor(x);
+	float intZ = floor(z);
+	float fracX = (x - intX);
+	float fracZ = (z - intZ);
+
+	float v1 = smoothRandom(intX, intZ);
+	float v2 = smoothRandom(intX + 1, intZ);
+	float v3 = smoothRandom(intX, intZ + 1);
+	float v4 = smoothRandom(intX + 1, intZ + 1);
+	float i1 = mix(v1, v2, fracX);
+	float i2 = mix(v3, v4, fracZ);
+	return mix(i1, i2, fracZ);
+}
+
+float random(vec2 p){
+	return interpolatedRandom(p.x, p.y);
+}
+
+const vec4 first = vec4(0.5, 0.5, 0.5, 1.0);
+const vec4 second = vec4(1.0, 1.0, 1.0, 0.7);
+const vec4 last = vec4(1.0);
+
+void main(void){
+	
+	//out_Color = vec4(0, 0, 0, 1);
+	
+	//Wertestufen! für nach und nach sichtbare Sterne / auch verschieden helle + farbige!
+	
+	//if(h > 0.99){
+	//	out_Color = first;//vec3(hash(texCoords))
+	//}
+	//if(h > 0.9935){
+	//	out_Color = second;
+	//}
+	//if(h > 0.997){
+	//	out_Color = last;
+	//}
+	
+	vec3 normT = normalize(texCoords);
+	float h = hash(normT);
+	
+	float cap = 0.997;
+	
+	float absY = abs(normT.y);
+	
+	if(absY < 0.15){
+		cap -= (0.15-absY)*(0.15-absY);//(0.5-abs(0.5-(normT.x+0.2)/0.6));
+	}
+		
+	if(h > cap){
+		out_Color = last;//vec4(h, h, h, 1.0);
+	}else if(h > cap*0.95){
+		normT *= 0.1;
+		float nebula = min(interpolatedRandom(normT.x, normT.z), 1);
+		normT *= 2;
+		float nebula2 = min(interpolatedRandom(normT.x, normT.y), 1);
+		//if(nebula > 0.4f){
+			out_Color = vec4(hash(normT-0.2), hash(normT*5+0.1), nebula2, nebula*nebula2);
+			out_Color = vec4(mix(vec3(0), out_Color.rgb, clamp(out_Color.a, 0.05, 0.15)), 1.0);
+			out_Color.rgb *= nebula*nebula*nebula;
+		//}else{
+		//	out_Color = vec4(0, 0, 0, 1);
+		//}
+	} else {
+		out_Color = vec4(0, 0, 0, 1);
+	}
+	
+}

@@ -1,0 +1,136 @@
+
+#ifndef MAX_LIGHTS
+#define MAX_LIGHTS 0
+#endif
+
+#ifndef bloom
+#define bloom false
+#endif
+
+#ifndef manualAntiAliasing
+#define manualAntiAliasing false
+#endif
+
+#ifndef useShadows
+#define useShadows false
+#endif
+
+// gets overridden if set to true...
+#define shownormals false
+
+#include DirectionalLight
+#include MaterialLayer
+
+#if MAX_LIGHTS > 0
+#include PointLight
+#endif
+
+#if useShadows
+#include ShadowMap
+#endif
+
+in vec2 texCoords;
+in vec3 norms;
+#if useShadows
+in vec4 shadowCoords;
+#endif
+
+layout (location = 0) out vec4 out_Color;
+#if bloom
+layout (location = 1) out vec4 out_BrightColor;
+#endif
+
+in vec3 dirToCam;
+
+// point lights
+#if MAX_LIGHTS > 0
+in vec3 toLight[MAX_LIGHTS];
+
+uniform int num_pointlights;
+uniform PointLight pointlights[MAX_LIGHTS];
+#endif
+
+uniform DirectionalLight sun;
+
+uniform MaterialLayer diffuse;
+uniform MaterialLayer bloomMat;
+// TODO perhaps reflectivity as a materiallayer, too?
+// and maybe try combining those structs?
+// probably should benchmark with bloomMat & reflectMat & diffuse colors only etc
+uniform float reflectivity;
+// uniform float reflectivityDampening;
+#define reflectivityDampening 10.0
+
+uniform float discardUnderAlpha;
+uniform float fakeLight;// = 0.4
+
+#if useShadows
+uniform ShadowMap shadowmap;
+#endif
+
+void main(){
+
+	vec4 colorTex = getColor(texCoords, diffuse);
+	out_Color = vec4(0.0, 0.0, 0.0, 1.0);
+	vec3 normDirToCam;
+	if(reflectivity > 0.0)
+		normDirToCam = normalize(dirToCam);
+	vec3 normNorms = normalize(norms);
+	
+#if useShadows
+	float shadowContrib = 1.0 - 0.9 * getShadow(shadowmap, shadowCoords);
+#else
+	float shadowContrib = 1.0;
+#endif
+	out_Color.rgb += colorTex.rgb * clamp( min(dot(sun.dir, normNorms), shadowContrib), fakeLight, 1.0) * sun.color;
+	if (reflectivity > 0.0) {
+		// TODO implement scene reflections for single objects!
+		out_Color.rgb += shadowContrib * sun.color * reflectivity * max(0.0, pow(max(0.0, dot(reflect(-sun.dir, normNorms), normDirToCam)), reflectivityDampening));
+	}
+	
+	if(discardUnderAlpha > 0.0 && (out_Color.a < discardUnderAlpha))
+		discard;
+	
+#if bloom
+	out_BrightColor = vec4(0.0);
+	//vec3 bloomColor = getColor(texCoords, bloomMat).rgb;
+	vec3 bloomColor = bloomMat.color.rgb* out_Color.rgb;// ?
+#endif
+		
+#if MAX_LIGHTS > 0
+	for(int i = 0; i < MAX_LIGHTS; i++) {//i < num_pointlights && 
+		vec3 tol = normalize(toLight[i]);
+		float lightbrightness =  1.0 / (1.0 + dot(toLight[i], toLight[i]));
+		vec3 light = colorTex.rgb * pointlights[i].color * lightbrightness;
+		out_Color.rgb += light * max(0.0, dot(normNorms, tol));
+		if(reflectivity > 0.0)
+			out_Color.rgb += lightbrightness * pointlights[i].color * reflectivity * pow(max(0.0, dot(reflect(-tol, normNorms), normDirToCam)), reflectivityDampening);
+#if bloom
+		out_BrightColor.rgb += light * 0.1 * bloomColor;
+#endif
+	}
+#endif
+
+#if bloom
+	out_BrightColor.rgb += colorTex.rgb * bloomColor;
+	out_BrightColor.a = out_Color.a;// why? (out_Color.a < 1.0) ? 0.0 : 1.0
+#endif
+
+#if shownormals
+	out_Color = vec4((normNorms+1.0)*0.5, 1.0);
+#endif
+	
+	// doesn't really work at all!
+#if manualAntiAliasing
+	if(texCoords.x > 0.95) {
+		out_Color.rgb *= (1.0 - texCoords.x) * 20.0;
+	} else if (texCoords.x < 0.05) {
+		out_Color.rgb *= texCoords.x * 20.0;
+	} else if(texCoords.y > 0.95) {
+		out_Color.rgb *= (1.0 - texCoords.y) * 20.0;
+	} else if (texCoords.y < 0.05) {
+		out_Color.rgb *= texCoords.y * 20.0;
+	}
+#endif
+	
+}

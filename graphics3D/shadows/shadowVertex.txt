@@ -1,0 +1,41 @@
+
+#ifndef MAX_JOINTS
+#define MAX_JOINTS 0
+#endif
+
+#ifndef MAX_WEIGHTS
+#define MAX_WEIGHTS 0
+#endif
+
+in vec3 pos;
+
+#if (MAX_JOINTS > 0 && MAX_WEIGHTS > 0)
+in ivec4 jointIndices;
+in vec4 weights;
+#endif
+
+uniform mat4 projViewTransMat;
+
+#if (MAX_JOINTS > 0 && MAX_WEIGHTS > 0)
+uniform mat4 jointTransforms[MAX_JOINTS];
+#endif
+
+void main(){
+
+#if (MAX_JOINTS > 0 && MAX_WEIGHTS > 0)
+	vec4 totalLocalPos = vec4(0.0);
+	
+	for(int i = 0; i < MAX_WEIGHTS; i++){
+		int index = jointIndices[i];
+		float weight = weights[i];
+		totalLocalPos += jointTransforms[index] * vec4(pos, 1.0) * weight;
+	}
+	vec4 worldPos = vec4(totalLocalPos.xyz, 1.0);
+#else
+	vec4 worldPos = vec4(pos, 1.0);
+#endif
+	// TODO add 0.001 of sun dir to worldPos
+	
+	gl_Position = projViewTransMat * worldPos;
+	
+}

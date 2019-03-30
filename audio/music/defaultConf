@@ -1,0 +1,42 @@
+Config{
+Autumn Day
+Strings{
+name = Autumn Day from Kevin MacLeod
+path = Kevin MacLeod - Autumn Day.ogg
+}
+Booleans{
+relativePath = true
+active = true
+}
+Integers{
+downloadStatus = 0
+}
+}
+Config{
+Cyborg Ninja
+Strings{
+name = Cyborg Ninja from Kevin MacLeod
+path = Cyborg Ninja.ogg
+}
+Booleans{
+relativePath = true
+active = false
+}
+Integers{
+downloadStatus = 0
+}
+}
+Config{
+Adventure Meme
+Strings{
+name = Adventure Meme from Kevin MacLeod
+path = Adventure Meme.ogg
+}
+Booleans{
+relativePath = true
+active = false
+}
+Integers{
+downloadStatus = 0
+}
+}

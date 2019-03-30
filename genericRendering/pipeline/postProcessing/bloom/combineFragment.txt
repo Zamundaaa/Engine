@@ -1,0 +1,81 @@
+
+#define greyscale false
+
+#ifndef HDR
+#define HDR false
+#endif
+
+in vec2 textureCoords;
+
+out vec4 out_Color;
+
+uniform sampler2D colourTexture;
+#ifdef bloom
+uniform sampler2D highlightTexture;
+#endif
+uniform sampler2D GUI;
+
+uniform float brightness;
+uniform float renderGUI;
+
+uniform mat4 invertedProjMat;
+uniform mat4 invertedViewMat;
+
+uniform vec3 sunColour;
+uniform vec3 sunDir;
+
+uniform float onlyGUI;
+uniform float min_brightness;
+#if HDR
+// downsample the image and find out some exposure value. Or just some random pixels from the middle or something!
+//uniform float exposure;
+const float exposure = 1;
+#endif
+
+const float gamma = 2.2;
+
+void main(void){
+
+     
+	if(onlyGUI < 0.5){
+		vec4 sceneColor = texture(colourTexture, textureCoords);
+		out_Color = sceneColor;
+#ifdef bloom
+		vec4 highlightColor = texture(highlightTexture, textureCoords);
+		out_Color += highlightColor;
+#endif
+		
+		out_Color.rgb *= brightness;
+
+#if HDR
+/*
+		vec4 vh = vec4(out_Color.rgb, exposure);
+		vec4 va = (1.425*vh) + 0.05;
+		vec4 vf = ((vh * va + 0.004) / (vh * (va + 0.55) + 0.0491)) - 0.0821;
+		out_Color.rgb = vf.rgb / vf.w;
+*/
+	  	
+	   	out_Color.rgb = vec3(1.0) - exp(-out_Color.rgb * exposure);
+#endif
+		
+#if greyscale
+		float avg = (out_Color.r+out_Color.g+out_Color.b)/3;
+		out_Color = vec4(avg, avg, avg, 1.0);
+#endif
+
+#ifdef gammaCorrection
+		out_Color.rgb = pow(out_Color.rgb, vec3(1.0/gamma));
+#endif
+
+		if(renderGUI > 0.5){
+			vec4 g = texture(GUI, textureCoords);
+			out_Color = mix(vec4(out_Color.rgb, 1.0), vec4(g.rgb, 1.0), g.a);
+		}
+		
+	}else{
+		out_Color = vec4(texture(GUI, textureCoords).rgb, 1.0);
+	}
+	
+	
+	
+}

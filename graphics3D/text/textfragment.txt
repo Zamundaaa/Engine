@@ -1,0 +1,57 @@
+
+#include MaterialLayer
+
+#ifndef bloom
+#define bloom false
+#endif
+
+in vec2 texCoords;
+in vec3 norms;
+
+layout (location = 0) out vec4 out_Color;
+#ifdef bloom
+layout (location = 1) out vec4 out_BrightColor;
+#endif
+
+uniform vec3 sunDir;// = vec3(0.0, 1.0, 0.0);
+uniform vec3 sunColor;// = vec3(1.0);
+
+uniform float discardUnderAlpha;// = 0;
+uniform float fakeLight;// = 0.4;
+uniform sampler2D atlasTexture;
+
+uniform MaterialLayer diffuse;
+uniform MaterialLayer bloomMat;
+
+const vec2 offset = vec2(0.006, 0.006);
+
+void main(){
+
+#ifdef texCoordColors
+	float atlasTex = texture(atlasTexture, texCoords+offset).a;
+	vec4 colorTex = vec4(texCoords, 0.0, 1.0);
+	out_Color = vec4(colorTex.rgb, atlasTex);
+#else
+	vec4 colorTex = getColor(texCoords, diffuse);
+	float atlasTex = texture(atlasTexture, texCoords + offset).a;
+	
+	out_Color = colorTex;
+	if(atlasTex < 0.1)
+		discard;
+	out_Color.a *= atlasTex;
+#endif
+		
+	if(fakeLight < 1.0){
+		out_Color.rgb *= clamp(dot(sunDir, normalize(norms)) * sunColor, fakeLight, 1.0);
+	}else if(fakeLight > 1.0){
+		out_Color.rgb *= fakeLight;
+	}
+	
+	if(discardUnderAlpha > 0.0 && out_Color.a < discardUnderAlpha)
+		discard;
+
+#if bloom
+	out_BrightColor = colorTex * bloomMat.color;
+#endif
+	
+}

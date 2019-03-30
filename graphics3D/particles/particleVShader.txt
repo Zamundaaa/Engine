@@ -1,0 +1,48 @@
+
+in vec2 position;
+
+in mat4 modelViewMatrix;
+in vec4 texOffset;
+in float blendFactor;
+//in float distanceToCam;
+
+out vec2 textureCoords1;
+out vec2 textureCoords2;
+out float blend;
+//out float visibility;
+
+uniform mat4 projectionMatrix;
+uniform float NOR = 8.0;
+//uniform float density;
+//uniform float gradient;
+
+#ifdef logarithmic
+const float C = 1;
+const float far = 2 << 16;
+const float FC = 1.0/log(far*C + 1);
+const float startw = 0.1;
+#endif
+
+void main(void){
+	
+	vec2 textureCoords = position + vec2(0.5, 0.5);
+	
+	textureCoords.y = 1.0 - textureCoords.y;
+	textureCoords /= NOR;
+	textureCoords1 = textureCoords + texOffset.xy;
+	textureCoords2 = textureCoords + texOffset.zw;
+	blend = blendFactor;
+	
+	//visibility = exp(-pow((blendFactor.y * density), gradient));
+	//visibility = clamp(visibility, 0.0, 1.0);
+	
+	gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 0.0, 1.0);
+	
+#ifdef logarithmic
+ 	if(gl_Position.w > startw){
+   	 	float logz = log((gl_Position.w-startw)*C + 1)*FC;
+    		gl_Position.z = (2*logz - 1)*gl_Position.w;
+    	}
+#endif
+
+}

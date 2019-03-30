@@ -1,0 +1,87 @@
+
+#include PointLight
+
+#ifndef MAX_LIGHTS
+#define MAX_LIGHTS 0
+#endif
+
+#ifndef useShadows
+#define useShadows false
+#endif
+
+#if useShadows
+#include ShadowMap
+#endif
+
+in vec3 pos;
+in float tex;
+in vec3 norm;
+
+out vec3 norms;
+out float material;
+
+#if useShadows
+out vec4 shadowCoords;
+#endif
+
+// point lights
+#if MAX_LIGHTS > 0
+out vec3 toLight[MAX_LIGHTS];
+out vec3 dirToCam;
+
+uniform int num_pointlights;
+uniform PointLight pointlights[MAX_LIGHTS];
+uniform vec3 cameraPos;
+#endif
+
+#if useShadows
+uniform ShadowMap shadowmap;
+#if MAX_LIGHTS <= 0
+uniform vec3 cameraPos;
+#endif
+//uniform mat4 toShadowSpace;
+#endif
+
+uniform mat4 projViewMat;
+uniform float time;
+
+const float PI = 3.1415927;
+
+void main(){
+	
+	vec3 wpos = pos;
+#ifdef groundWaves
+	wpos.y = (sin(pos.x+time*PI*2000)+sin(pos.z+time*PI*2000)) * 0.2;
+#endif
+	
+	gl_Position = projViewMat * vec4(wpos, 1.0);
+	material = tex;
+	
+#ifdef groundWaves
+	norms = normalize(cross(
+			vec3(0, wpos.y-(sin(pos.x+time*PI*2000)+sin(pos.z-0.5+time*PI*2000))*0.2, 0.5),
+			vec3(0.5, wpos.y-(sin(pos.x-0.5+time*PI*2000)+sin(pos.z+time*PI*2000))*0.2, 0)
+			)
+		);
+#else
+	norms = norm;
+#endif
+
+#if MAX_LIGHTS > 0
+	dirToCam = wpos - cameraPos;
+	for(int i = 0; i < MAX_LIGHTS; i++) {// i < num_pointlights &&
+		toLight[i] = pointlights[i].position - wpos;
+	}
+#endif
+
+#if useShadows
+	vec3 trc;
+#if MAX_LIGHTS > 0
+	trc = dirToCam;
+#else
+	trc = wpos - cameraPos;
+#endif
+	shadowCoords = calculateShadowCoords(shadowmap, wpos, trc);
+#endif
+
+}

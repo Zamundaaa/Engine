@@ -1,0 +1,180 @@
+
+in vec3 textureCoords;
+
+layout (location = 0) out vec4 out_Color;
+#ifdef bloom
+layout (location = 1) out vec4 out_BrightColor;
+#endif
+
+//uniform samplerCube cubeMap;
+//uniform samplerCube cubeMap2;
+uniform float blendFactor;
+uniform vec3 fogColor;
+uniform vec3 WC;
+uniform float bF;
+
+uniform float PIC;
+uniform float TIME;
+
+uniform vec3 sunDirection;
+
+uniform vec3 timeColor;
+
+uniform sampler2D moonTex;
+
+uniform sampler2D glow;
+uniform sampler2D horizon;
+
+uniform samplerCube startex;
+
+uniform float STARS;
+uniform mat4 starCoordTransform;
+
+const float lowerLimit = 0.0;
+const float upperLimit = 30.0;
+
+const float nontexLL = -60;
+const float nontexUL = 0.0;
+
+const float PI = 3.1415;
+const vec4 sunColor = vec4(10.0);
+
+const float sunsize = 0.002;
+const float suncircle = 0.001;
+const float redsunoffset = -0.05;
+
+// moonStuff.x = moonSize
+uniform vec3 moonStuff;
+
+uniform float showMoon = 1.0;
+
+void main(void){
+	
+	float dMoon = moonStuff.y;
+	float dMoonM = moonStuff.z;
+	
+	vec4 finalColor = vec4(0.0);
+	
+    vec3 normTex = normalize(textureCoords);
+	
+	/*
+	out_Color = vec4(timeColor, 1.0);
+	if(normTex.y < 0){
+		if(normTex.y > -0.4){
+			out_Color = mix(vec4(0.0, 0.0, 0.0, 1.0), out_Color, 1+(normTex.y*2.5));
+		}else{
+			out_Color = vec4(0.0, 0.0, 0.0, 1.0);
+		}
+	}
+	*/
+	
+	// JUST FOR TESTS!!! Macht (fast) hypnotisierende Muster am Himmel
+	//	float xfact = sin(TIME)*100;
+	//	float yfact = sin(TIME*0.3+932.02)*100;
+	//	float zfact = cos(TIME*0.93)*100;
+	//	out_Color = mix(out_Color, vec4(1, 1, 1, 1.0),
+	//	naturalNoise(sin(normTex.x*xfact)+cos(normTex.y*yfact)+sin(normTex.z*zfact+429.432) ) );
+	
+	vec3 starSampleCoords = (vec4(normTex, 1.0) * starCoordTransform).xyz;
+	if(abs(starSampleCoords.x) >= abs(starSampleCoords.y) && abs(starSampleCoords.x) >= abs(starSampleCoords.z)){
+		starSampleCoords *= 1/starSampleCoords.x;
+	}else if(abs(starSampleCoords.y) >= abs(starSampleCoords.x) && abs(starSampleCoords.y) >= abs(starSampleCoords.z)){
+		starSampleCoords *= 1/starSampleCoords.y;
+	}else{
+		starSampleCoords *= 1/starSampleCoords.z;
+	}
+	
+	//float yc = (sunDirection.y+1)*0.5;
+	//out_Color = texture(horizon, vec2(yc, (normTex.y+1)*0.5))
+	//			+ texture(glow, vec2(yc, dot(normTex, sunDirection)));
+	/*
+	float vl = dot(normTex, -sunDirection);
+    	vec4 Kc = texture2D(horizon, vec2((-sunDirection.y + 1.0) / 2.0, (normTex.y+1)*0.5));
+    	vec4 Kg = texture2D(glow,  vec2((-sunDirection.y + 1.0) / 2.0, vl));
+    	out_Color = vec4(Kc.rgb + Kg.rgb * Kg.a / 2.0, 1);
+	*/
+	
+	vec4 h = texture(horizon, vec2(0.5, clamp((normalize(sunDirection).y+1)*0.5f, 1/32.0, 1-1/32.0)));
+	out_Color = h;
+	
+	vec4 STEX = texture(startex, starSampleCoords);
+	
+	out_Color = mix(out_Color, STEX, blendFactor*STEX.a);
+	
+	out_Color = vec4(mix(out_Color.xyz, WC, bF), 1.0);
+	
+	// this creates the red glow in the afternoon and the morning
+	const float offset = redsunoffset;
+	
+	float level = abs(sunDirection.y-offset);
+	if(level < 0.2){
+		level = 1-level*5;
+		vec2 ka = abs(normTex.xz-sunDirection.xz);
+		
+		float h = level*min(sqrt(1.0/(dot(ka, ka)*2)), 1.2);
+		float nty = 5*abs(normTex.y-offset);
+		if(nty < h){
+			out_Color = mix(
+				mix(vec4(1.0, 1.0, 153.0/255.0, 1.0), vec4(0.7, 0.15, 0.2, 1.0), level), 
+					out_Color, nty/h);
+		}
+	}
+	
+	finalColor = out_Color;
+#ifdef bloom
+	out_BrightColor = vec4(0);
+#endif
+	
+   	float dotpr = dot(sunDirection, normTex);
+ 
+    	if(dotpr >= 1-sunsize){
+  	  	float vis = 1;
+    		if(dotpr < 1-suncircle){
+	    		out_Color = sunColor;
+	    		vis = min(0, (1-sunsize)/dotpr);
+	    		//out_Color = vec4(1, 1, 0.7, 1.0);
+		}else{
+			out_Color = sunColor;
+		}
+	   	 //float reddot = dot( normalize(vec3(1, redoffset, 0)), sunDirection);//normTex
+	   	//const float redcap = 0.95;
+	   	 //if(reddot > redcap){
+	   	// 	out_Color = mix(out_Color, vec4(1, 0.2, 0.2, 1.0), 1-(20*(1-reddot)));
+	    	//}else{
+	    	//	reddot = dot( normalize(vec3(-1, redoffset, 0)), sunDirection);//normTex
+	   	//	if(reddot > redcap){
+	   	//		out_Color = mix(out_Color, vec4(1, 0.2, 0.2, 1.0), 1-(20*(1-reddot)) );
+	    	//	}
+	     //}
+	    	float level = abs(sunDirection.y-redsunoffset);
+	    	if(level < 0.2){
+	    		level = 1-5*level;
+	    		out_Color = mix(out_Color, vec4(1.0, 0.2, 0.2, 1.0), level);
+	    		//out_Color = vec4(1.0, 0.2, 0.2, 1.0);
+	    	}
+	    
+	    	if(vis < 1){
+	    		out_Color = mix(out_Color, finalColor, 1-vis);
+	    	}
+#ifdef bloom
+	    	out_BrightColor = out_Color;
+#endif
+   	}else if(showMoon > 0.5 && (dotpr <= moonStuff.x-1)){
+    		float moondot = -dotpr;
+    		vec3 texC = (vec4(normTex, 1.0) * -starCoordTransform).xyz;
+    		vec2 tC = vec2((texC.z+dMoon)*dMoonM, (texC.x+dMoon)*dMoonM);
+    		out_Color = texture(moonTex, tC);
+#ifdef bloom
+  		out_BrightColor = 0.05*out_Color;
+#endif
+  		//out_Color *= clamp(1-dotpr, 0, 1);
+   	}
+   	
+    	if(normTex.y < 0){
+    		float mul = 1+normTex.y*10;
+    		if(mul < 0)
+    			mul = 0;
+    		out_Color.rgb *= mul;
+    	}
+    	
+}

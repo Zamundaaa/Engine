@@ -1,0 +1,96 @@
+
+#ifndef MAX_LIGHTS
+#define MAX_LIGHTS 0
+#endif
+
+#ifndef MAX_JOINTS
+#define MAX_JOINTS 0
+#endif
+
+#ifndef MAX_WEIGHTS
+#define MAX_WEIGHTS 0
+#endif
+
+#ifndef useShadows
+#define useShadows false
+#endif
+
+#if MAX_LIGHTS > 0
+#include PointLight
+#endif
+
+#if useShadows
+#include ShadowMap
+#endif
+
+in vec3 pos;
+in vec2 tex;
+in vec3 norm;
+
+#if (MAX_JOINTS > 0 & MAX_WEIGHTS > 0)
+in ivec4 jointIndices;
+in vec4 weights;
+#endif
+
+out vec2 texCoords;
+out vec3 norms;
+#if useShadows
+out vec4 shadowCoords;
+#endif
+
+out vec3 dirToCam;
+uniform vec3 cameraPos;
+
+// point lights
+#if MAX_LIGHTS > 0
+out vec3 toLight[MAX_LIGHTS];
+
+uniform int num_pointlights;
+uniform PointLight pointlights[MAX_LIGHTS];
+#endif
+
+#if (MAX_JOINTS > 0 & MAX_WEIGHTS > 0)
+uniform mat4 jointTransforms[MAX_JOINTS];
+#endif
+
+#if useShadows
+uniform ShadowMap shadowmap;
+#endif
+
+uniform mat4 transMat;
+uniform mat4 projViewMat;
+
+void main(){
+
+#if (MAX_JOINTS > 0 && MAX_WEIGHTS > 0)
+	vec4 totalLocalPos = vec4(0.0);
+	vec4 totalNormal = vec4(0.0);
+	
+	for(int i = 0; i < MAX_WEIGHTS; i++){
+		int index = jointIndices[i];
+		float weight = weights[i];
+		totalLocalPos += jointTransforms[index] * vec4(pos, 1.0) * weight;
+		totalNormal += jointTransforms[index] * vec4(norm, 0.0) * weight;
+	}
+	vec4 worldPos = transMat * vec4(totalLocalPos.xyz, 1.0);
+	norms = (transMat * vec4(totalNormal.xyz, 0.0)).xyz;
+#else
+	vec4 worldPos = transMat * vec4(pos, 1.0);
+	norms = (transMat * vec4(norm, 0.0)).xyz;
+#endif
+	
+	gl_Position = projViewMat * worldPos;
+	texCoords = tex;
+	dirToCam = cameraPos - worldPos.xyz;
+	
+#if MAX_LIGHTS > 0
+	for(int i = 0; i < MAX_LIGHTS; i++){// i < num_pointlights && 
+		toLight[i] = pointlights[i].position - worldPos.xyz;
+	}
+#endif
+
+#if useShadows
+	shadowCoords = calculateShadowCoords(shadowmap, worldPos.xyz, dirToCam);
+#endif
+
+}

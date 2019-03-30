@@ -1,0 +1,34 @@
+
+in vec2 pos;
+
+out vec3 texCoords;
+
+uniform int side;// pos x neg x pos y neg y pos z neg z
+
+void main(void){
+	
+	gl_Position = vec4(pos, 0.0, 1.0);
+	//texCoords = vec2((pos.x+1.0)/2.0, 1 - (pos.y+1.0)/2.0);//pos
+	
+	switch(side){
+	case 0:
+		texCoords = vec3(1, pos.y, pos.x);
+		break;
+	case 1:
+		texCoords = vec3(-1, pos.y, pos.x);
+		break;
+	case 2:
+		texCoords = vec3(pos.x, 1, pos.y);
+		break;
+	case 3:
+		texCoords = vec3(pos.x, -1, pos.y);
+		break;
+	case 4:
+		texCoords = vec3(pos.x, pos.y, 1);
+		break;
+	default:
+		texCoords = vec3(pos.x, pos.y, -1);
+		break;
+	}
+	
+}

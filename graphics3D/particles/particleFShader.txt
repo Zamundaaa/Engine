@@ -1,0 +1,39 @@
+
+layout (location = 0) out vec4 out_colour;
+#ifdef bloom
+layout (location = 1) out vec4 out_Brightcolour;
+#endif
+
+in vec2 textureCoords1;
+in vec2 textureCoords2;
+in float blend;
+//in float visibility;
+
+uniform sampler2D particleTexture;
+uniform float bright;
+//uniform vec3 skyColor;
+uniform float colorMult = 1;
+//uniform float TD;
+
+void main(void){
+	
+	vec4 col1 = texture(particleTexture, textureCoords1);
+	vec4 col2 = texture(particleTexture, textureCoords2);
+	
+	out_colour = mix(col1, col2, blend);
+	
+	//out_colour.rgb *= colorMult;
+	//out_colour = mix(vec4(skyColor, 1.0), out_colour, visibility);
+	//out_colour.a = visibility;
+	//out_colour = vec4(visibility, visibility, visibility, 1.0);
+	//out_Brightcolour = bright;
+#ifdef bloom
+	out_Brightcolour = vec4(out_colour.rgb*bright, out_colour.a);
+#endif
+
+	//out_colour = vec4(textureCoords1, 0.0, 1.0);
+
+	//if(out_colour.a < 0.1)
+	//	discard;
+
+}
