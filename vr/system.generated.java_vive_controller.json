@@ -1,0 +1,130 @@
+{
+   "alias_info" : {},
+   "app_key" : "system.generated.java",
+   "bindings" : {
+      "/actions/xengine" : {
+         "chords" : [],
+         "haptics" : [
+            {
+               "output" : "/actions/xengine/out/vibration_left",
+               "path" : "/user/hand/left/output/haptic"
+            },
+            {
+               "output" : "/actions/xengine/out/vibration_right",
+               "path" : "/user/hand/right/output/haptic"
+            }
+         ],
+         "poses" : [
+            {
+               "output" : "/actions/xengine/in/hand_pose_left",
+               "path" : "/user/hand/left/pose/raw"
+            },
+            {
+               "output" : "/actions/xengine/in/hand_pose_right",
+               "path" : "/user/hand/right/pose/raw"
+            },
+            {
+               "output" : "none",
+               "path" : "/user/hand/left/pose/base"
+            },
+            {
+               "output" : "none",
+               "path" : "/user/hand/right/pose/base"
+            }
+         ],
+         "sources" : [
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/xengine/in/grab_left"
+                  }
+               },
+               "mode" : "button",
+               "parameters" : {
+                  "haptic_duration" : "0.5"
+               },
+               "path" : "/user/hand/left/input/grip"
+            },
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/xengine/in/grab_right"
+                  }
+               },
+               "mode" : "button",
+               "parameters" : {
+                  "haptic_duration" : "0.5"
+               },
+               "path" : "/user/hand/right/input/grip"
+            },
+            {
+               "inputs" : {
+                  "pull" : {
+                     "output" : "/actions/xengine/in/trigger_left"
+                  }
+               },
+               "mode" : "trigger",
+               "path" : "/user/hand/left/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "pull" : {
+                     "output" : "/actions/xengine/in/trigger_right"
+                  }
+               },
+               "mode" : "trigger",
+               "path" : "/user/hand/right/input/trigger"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/xengine/in/touchpad_left"
+                  }
+               },
+               "mode" : "trackpad",
+               "path" : "/user/hand/left/input/trackpad"
+            },
+            {
+               "inputs" : {
+                  "position" : {
+                     "output" : "/actions/xengine/in/touchpad_right"
+                  }
+               },
+               "mode" : "trackpad",
+               "path" : "/user/hand/right/input/trackpad"
+            },
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/xengine/in/hand_action_left"
+                  }
+               },
+               "mode" : "button",
+               "parameters" : {
+                  "haptic_amplitude" : "0.25",
+                  "haptic_duration" : "0.5"
+               },
+               "path" : "/user/hand/left/input/application_menu"
+            },
+            {
+               "inputs" : {
+                  "click" : {
+                     "output" : "/actions/xengine/in/hand_action_right"
+                  }
+               },
+               "mode" : "button",
+               "parameters" : {
+                  "haptic_amplitude" : "0.25",
+                  "haptic_duration" : "0.5"
+               },
+               "path" : "/user/hand/right/input/application_menu"
+            }
+         ]
+      }
+   },
+   "controller_type" : "vive_controller",
+   "description" : "",
+   "name" : "XEngine grab cfg",
+   "options" : {},
+   "simulated_actions" : []
+}
