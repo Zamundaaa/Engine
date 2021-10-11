@@ -1,7 +1,7 @@
 # Engine
-My own little render &amp; game engine
+My own little render &amp; game engine in Java, now abandoned to try to make something maybe better in C++...
 
-Is made to be rather easy to use and still very customizable. Very much a work in progress. Here's some pretty pictures:
+Was made to be rather easy to use and still very customizable. Here's some pretty pictures:
 
 ![alt text](https://github.com/Zamundaaa/Engine/blob/master/pictures/Screenshot_20181218_194800.png)
 
